@@ -12,6 +12,9 @@ public class Main {
      * @param args Argumentos de linha de comando (não utilizados nesta aplicação).
      */
     public static void main(String[] args) {
+        // Configura o sistema de log para salvar em arquivo ANTES de tudo
+        LogManager.setup(); //log fica em simulador.log
+
         // Cria a instância da Controladora, que é a classe central que gerencia
         // o modelo, a visão e os loops da simulação.
         Controladora controladora = new Controladora();
