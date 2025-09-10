@@ -7,6 +7,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+// Adições necessárias para o Logger
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Gerencia a interface gráfica (GUI) da simulação.
@@ -14,6 +17,9 @@ import java.io.InputStream;
  * e desenhar os dados do volume sobre ela,atualizando a janela em tempo real.
  */
 public class Display {
+
+    // Logger adicionado para a classe
+    private static final Logger logger = Logger.getLogger(Display.class.getName());
 
     private final JFrame frame;
     private final JLabel imageLabel;
@@ -37,12 +43,14 @@ public class Display {
     private void carregarImagemBase() {
         try (InputStream stream = getClass().getResourceAsStream("/images/hidrometro_base.jpeg")) {
             if (stream == null) {
-                System.err.println("ERRO CRÍTICO: Imagem 'hidrometro_base.jpeg' não encontrada na pasta 'resources/images'.");
+                // System.err.println substituído pela chamada de log
+                logger.severe("ERRO CRÍTICO: Imagem 'hidrometro_base.jpeg' não encontrada na pasta 'resources/images'.");
                 System.exit(1);
             }
             imagemBase = ImageIO.read(stream);
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace() substituído pela chamada de log
+            logger.log(Level.SEVERE, "ERRO CRÍTICO: Falha ao ler o arquivo de imagem.", e);
             System.exit(1);
         }
     }

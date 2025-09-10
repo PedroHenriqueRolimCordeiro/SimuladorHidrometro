@@ -1,4 +1,4 @@
-package br.com.simulador.hidrometro.util;
+package br.com.simulador.hidrometro.util; // Corrigi para "util" minúsculo, que é a convenção
 
 import java.io.IOException;
 import java.util.logging.*;
@@ -14,30 +14,27 @@ public class LogManager {
      * O arquivo será criado na pasta raiz do projeto.
      */
     public static void setup() {
-        // Obtém o logger raiz
         Logger logger = Logger.getLogger("");
-        logger.setLevel(Level.INFO); // Define o nível mínimo de log a ser registrado
+        logger.setLevel(Level.INFO);
 
         try {
-            // Cria um FileHandler que escreve no arquivo "simulador.log"
-            // O "true" no final indica que o log deve ser acrescentado ao arquivo existente (append)
             FileHandler fileHandler = new FileHandler("simulador.log", true);
-
-            // Define um formato de log simples e limpo
             SimpleFormatter formatter = new SimpleFormatter();
             fileHandler.setFormatter(formatter);
-
-            // Adiciona o nosso handler de arquivo ao logger
             logger.addHandler(fileHandler);
 
-            // Remove o handler do console para não imprimir mais no terminal
             Handler[] handlers = logger.getHandlers();
             if (handlers.length > 0 && handlers[0] instanceof ConsoleHandler) {
                 logger.removeHandler(handlers[0]);
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            // Usamos um logger para registrar a falha na configuração do log.
+            Logger.getLogger(LogManager.class.getName()).log(
+                    Level.SEVERE,
+                    "Falha crítica ao configurar o FileHandler. Os logs podem não ser salvos no arquivo.",
+                    e
+            );
         }
     }
 }

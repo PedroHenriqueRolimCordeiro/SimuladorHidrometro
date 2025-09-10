@@ -1,7 +1,7 @@
 package br.com.simulador.hidrometro;
 
 import br.com.simulador.hidrometro.controller.Controladora;
-
+import br.com.simulador.hidrometro.util.LogManager;
 /**
  * Classe principal que serve como ponto de entrada para a aplicação
  * do Simulador de Hidrômetro.
