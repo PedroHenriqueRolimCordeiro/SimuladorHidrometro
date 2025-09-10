@@ -9,6 +9,8 @@ import javax.swing.SwingUtilities;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class Controladora {
     private final Configuracao config;
@@ -91,8 +93,6 @@ public class Controladora {
     private void loopDeDisplay() {
         var dadosAtuais = hidrometro.getDadosLeitura();
 
-        // ---- AQUI ESTÁ A MUDANÇA ----
-        // Substituímos o System.out.printf por uma chamada de log no nível INFO.
         logger.log(Level.INFO, String.format("ESTADO: Volume = %.4f m³ | Pressão = %.2f bar",
                 dadosAtuais.volumeM3(),
                 dadosAtuais.pressaoBar()));
