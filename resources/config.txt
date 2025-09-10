@@ -1,0 +1,31 @@
+# Configurações do Simulador de Hidrômetro
+# ---- Parâmetros Físicos ----
+# Diâmetro do cano de entrada em milímetros. Afeta diretamente a vazão.
+bitola_mm=20.0
+
+# Pressão padrão da rede de água em bar.
+pressao_base_bar=2.5
+
+# Volume máximo do contador antes de ele "virar" para zero.
+max_volume_m3=99999.999
+
+# Fator de contagem do ar. 0.1 significa que o ar conta 10% do que a água contaria.
+fator_ar=0.1
+
+# Chance de faltar água a cada passo da simulação (0.01 = 1% de chance).
+chance_falta_agua=0.01
+
+
+# ---- Parâmetros de Simulação ----
+# Intervalo de tempo de cada passo da simulação física (em milissegundos).
+delta_t_simulacao_ms=100
+
+# Intervalo de tempo para atualizar a imagem do display (em milissegundos).
+# Controla o "framerate" da visualização.
+intervalo_update_display_ms=500
+
+# Duração em milissegundos da falta de água total (pressão zero). 5000ms = 5 segundos.
+duracao_falta_total_ms=5000
+
+# Duração em milissegundos da passagem de ar após a falta total. 3000ms = 3 segundos.
+duracao_passagem_ar_ms=3000
