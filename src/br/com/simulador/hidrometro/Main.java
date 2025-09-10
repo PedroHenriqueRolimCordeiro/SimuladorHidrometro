@@ -1,7 +1,6 @@
 package br.com.simulador.hidrometro;
 
 import br.com.simulador.hidrometro.controller.Controladora;
-import br.com.simulador.hidrometro.util.LogManager;
 
 /**
  * Classe principal que serve como ponto de entrada para a aplicação
@@ -13,8 +12,6 @@ public class Main {
      * @param args Argumentos de linha de comando (não utilizados nesta aplicação).
      */
     public static void main(String[] args) {
-        // Configura o sistema de log para salvar em arquivo ANTES de tudo
-        LogManager.setup();
         // Cria a instância da Controladora, que é a classe central que gerencia
         // o modelo, a visão e os loops da simulação.
         Controladora controladora = new Controladora();
