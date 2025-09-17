@@ -7,7 +7,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
-// Adições necessárias para o Logger
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,6 +24,9 @@ public class Display {
     private final JLabel imageLabel;
     private BufferedImage imagemBase;
 
+    // Variável para armazenar a imagem mais recente renderizada.
+    private BufferedImage imagemAtualizada;
+
     /**
      * Constrói a janela do display, carregando os recursos gráficos e
      * inicializando os componentes do Swing.
@@ -34,6 +36,14 @@ public class Display {
         frame = new JFrame("Simulador de Hidrômetro");
         imageLabel = new JLabel();
         inicializarComponentesGraficos();
+    }
+
+    /**
+     * Retorna a imagem mais recente que foi renderizada no display.
+     * @return A imagem atual como um objeto BufferedImage.
+     */
+    public BufferedImage getImagemAtual() {
+        return imagemAtualizada;
     }
 
     /**
@@ -78,11 +88,13 @@ public class Display {
      */
     public void atualizar(DadosLeitura dados) {
         // Cria uma nova imagem em memória para desenhar o frame atual
-        BufferedImage imagemAtualizada = new BufferedImage(
+        // e a armazena na variável de instância da classe.
+        this.imagemAtualizada = new BufferedImage(
                 imagemBase.getWidth(),
                 imagemBase.getHeight(),
                 BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = imagemAtualizada.createGraphics();
+        Graphics2D g = this.imagemAtualizada.createGraphics();
+
 
         // Desenha a imagem de fundo e melhora a qualidade do texto
         g.drawImage(imagemBase, 0, 0, null);
@@ -120,6 +132,6 @@ public class Display {
 
         // Libera os recursos gráficos e atualiza a imagem na tela
         g.dispose();
-        imageLabel.setIcon(new ImageIcon(imagemAtualizada));
+        imageLabel.setIcon(new ImageIcon(this.imagemAtualizada));
     }
 }

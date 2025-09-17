@@ -13,7 +13,7 @@ max_volume_m3=99999.999
 fator_ar=0.1
 
 # Chance de faltar água a cada passo da simulação (0.01 = 1% de chance).
-chance_falta_agua=0.01
+chance_falta_agua=0.00
 
 
 # ---- Parâmetros de Simulação ----

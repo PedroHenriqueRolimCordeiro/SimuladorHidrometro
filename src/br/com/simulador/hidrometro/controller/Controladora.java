@@ -5,6 +5,11 @@ import br.com.simulador.hidrometro.model.Hidrometro;
 import br.com.simulador.hidrometro.model.types.DirecaoFluxo;
 import br.com.simulador.hidrometro.view.Display;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
 import javax.swing.SwingUtilities;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,9 +24,10 @@ public class Controladora {
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
     private static final Logger logger = Logger.getLogger(Controladora.class.getName());
 
-    // --- NOVAS VARIÁVEIS PARA CONTROLAR O ESTADO ---
     private boolean emFaltaDeAgua = false;
     private int contadorTempoFaltaAgua = 0;
+
+    private int ultimoMetroCubicoSalvo = -1;
 
     public Controladora() {
         this.config = new Configuracao();
@@ -97,6 +103,55 @@ public class Controladora {
                 dadosAtuais.volumeM3(),
                 dadosAtuais.pressaoBar()));
 
-        SwingUtilities.invokeLater(() -> display.atualizar(dadosAtuais));
+        // A lógica de salvar a imagem agora está dentro do 'invokeLater' para garantir
+        // que ela seja executada somente APÓS a atualização da imagem no display.
+        SwingUtilities.invokeLater(() -> {
+            display.atualizar(dadosAtuais);
+            verificarESalvarImagem(dadosAtuais.volumeM3());
+        });
+    }
+
+    /**
+     * Verifica se a parte inteira do volume foi alterada (novo m³ completado)
+     * e, em caso afirmativo, salva a imagem atual do hidrômetro em um arquivo.
+     * @param volumeAtualM3 O volume atual medido pelo hidrômetro.
+     */
+    private void verificarESalvarImagem(double volumeAtualM3) {
+        int metroCubicoAtual = (int) volumeAtualM3;
+
+        // Condição: O m³ atual é maior que zero e é diferente do último que foi salvo.
+        if (metroCubicoAtual > 0 && metroCubicoAtual != this.ultimoMetroCubicoSalvo) {
+            this.ultimoMetroCubicoSalvo = metroCubicoAtual;
+
+            BufferedImage imagemParaSalvar = display.getImagemAtual();
+
+            if (imagemParaSalvar == null) {
+                return;
+            }
+
+            try {
+                // A matrícula agora é uma variável local, pois só é usada neste método.
+                // IMPORTANTE: Altere o valor abaixo para a sua matrícula SUAP.
+                final String matriculaSUAP = "202311250023";
+
+                File diretorio = new File("Medicoes_" + matriculaSUAP);
+
+                // Verifica se o diretório não existe E se a criação falhou.
+                if (!diretorio.exists() && !diretorio.mkdirs()) {
+                    logger.log(Level.SEVERE, "Falha ao criar o diretório para salvar a medição: " + diretorio.getAbsolutePath());
+                    return; // Aborta a operação de salvamento se o diretório não pôde ser criado.
+                }
+
+                int numeroArquivo = ((metroCubicoAtual - 1) % 99) + 1;
+                String nomeArquivo = String.format("%02d.jpeg", numeroArquivo);
+                File arquivoDeSaida = new File(diretorio, nomeArquivo);
+
+                ImageIO.write(imagemParaSalvar, "jpeg", arquivoDeSaida);
+                logger.log(Level.INFO, "Medição salva em: " + arquivoDeSaida.getAbsolutePath());
+
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Ocorreu um erro ao salvar a imagem da medição.", e);
+            }
+        }
     }
 }
