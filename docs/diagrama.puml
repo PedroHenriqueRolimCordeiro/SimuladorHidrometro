@@ -1,0 +1,118 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam style strictuml
+skinparam groupInheritance 2
+skinparam shadowing false
+skinparam linetype ortho
+
+class Main {
+  {static} + main(args : String[]) : void
+}
+
+class Controladora {
+  - config : Configuracao
+  - hidrometro : Hidrometro
+  - display : Display
+  - executor : ScheduledExecutorService
+  - {static} logger : Logger
+  - emFaltaDeAgua : boolean
+  - contadorTempoFaltaAgua : int
+  - ultimoMetroCubicoSalvo : int
+  + Controladora()
+  + iniciarSimulacao() : void
+  - loopDeSimulacao() : void
+  - gerenciarEstadoDaAgua() : void
+  - loopDeDisplay() : void
+  - verificarESalvarImagem(volumeAtualM3 : double) : void
+  - salvarImagemEmBackground(imagem : BufferedImage, nomeArquivo : String) : void
+}
+
+class Hidrometro {
+  - entrada : ConexaoEntrada
+  - contador : Contador
+  + Hidrometro(bitolaMm : double, volumeMaximoContador : double)
+  + simularPasso(deltaTSegundos : double, fatorAr : double) : void
+  + getDadosLeitura() : DadosLeitura
+  + setPressaoEntrada(pressao : double) : void
+  + setDirecaoFluxo(direcao : DirecaoFluxo) : void
+}
+
+class Contador {
+  - volumeAcumuladoM3 : double
+  - volumeMaximoM3 : double
+  + Contador(volumeMaximoM3 : double)
+  + registrarVolume(volumeM3 : double) : void
+  + getVolumeAtual() : double
+}
+
+class ConexaoEntrada {
+  - bitolaMm : double
+  - pressaoAtualBar : double
+  - direcao : DirecaoFluxo
+  + ConexaoEntrada(bitolaMm : double)
+  + getVazaoAtualM3s() : double
+  + isPassandoAr() : boolean
+  + setPressaoAtualBar(pressaoAtualBar : double) : void
+  + setDirecao(direcao : DirecaoFluxo) : void
+  + getPressaoAtualBar() : double
+}
+
+class Configuracao {
+  - {static} logger : Logger
+  - propriedades : Properties
+  - arquivoConfig : File
+  - ultimaModificacao : long
+  + Configuracao()
+  - carregar() : void
+  + verificarEAtualizar() : void
+  + getDouble(chave : String) : double
+  + getInt(chave : String) : int
+}
+
+class Display {
+  - {static} logger : Logger
+  - frame : JFrame
+  - imageLabel : JLabel
+  - imagemBase : BufferedImage
+  - imagemAtualizada : BufferedImage
+  + Display()
+  + getImagemAtual() : BufferedImage
+  - carregarImagemBase() : void
+  - inicializarComponentesGraficos() : void
+  + atualizar(dados : DadosLeitura) : void
+}
+
+class LogManager {
+  {static} + setup() : void
+  {static} + getLogger(nome : String) : Logger
+}
+
+class DadosLeitura <<record>> {
+  + volumeM3 : double
+  + pressaoBar : double
+}
+
+enum DirecaoFluxo {
+  DIRETO
+  REVERSO
+  NULO
+}
+
+' relações (composição / dependência)
+Controladora *-- Hidrometro
+Controladora *-- Display
+Controladora *-- Configuracao
+Hidrometro *-- Contador
+Hidrometro *-- ConexaoEntrada
+
+Main ..> Controladora : instancia
+Controladora ..> LogManager
+Display ..> DadosLeitura : usa
+Display ..> JFrame
+Display ..> JLabel
+Display ..> BufferedImage
+Hidrometro ..> DadosLeitura : cria_e_retorna
+Hidrometro ..> DirecaoFluxo
+ConexaoEntrada ..> DirecaoFluxo
+
+@enduml
