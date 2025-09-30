@@ -1,0 +1,10 @@
+bitola_mm=20.0
+pressao_base_bar=1.8
+max_volume_m3=99999.999
+fator_ar=0.1
+chance_falta_agua=0.00
+
+delta_t_simulacao_ms=100
+intervalo_update_display_ms=500
+duracao_falta_total_ms=4000
+duracao_passagem_ar_ms=2500

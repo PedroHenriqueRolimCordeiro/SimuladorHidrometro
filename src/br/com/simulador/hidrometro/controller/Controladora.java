@@ -2,6 +2,7 @@ package br.com.simulador.hidrometro.controller;
 
 import br.com.simulador.hidrometro.config.Configuracao;
 import br.com.simulador.hidrometro.model.Hidrometro;
+import br.com.simulador.hidrometro.model.types.DadosLeitura;
 import br.com.simulador.hidrometro.model.types.DirecaoFluxo;
 import br.com.simulador.hidrometro.view.Display;
 
@@ -29,8 +30,8 @@ public class Controladora {
 
     private int ultimoMetroCubicoSalvo = -1;
 
-    public Controladora() {
-        this.config = new Configuracao();
+    public Controladora(String caminhoConfiguracao) {
+        this.config = new Configuracao(caminhoConfiguracao);
         this.hidrometro = new Hidrometro(
                 config.getDouble("bitola_mm"),
                 config.getDouble("max_volume_m3")
@@ -97,7 +98,7 @@ public class Controladora {
     }
 
     private void loopDeDisplay() {
-        var dadosAtuais = hidrometro.getDadosLeitura();
+        DadosLeitura dadosAtuais = hidrometro.getDadosLeitura();
 
         logger.log(Level.INFO, String.format("ESTADO: Volume = %.4f m³ | Pressão = %.2f bar",
                 dadosAtuais.volumeM3(),

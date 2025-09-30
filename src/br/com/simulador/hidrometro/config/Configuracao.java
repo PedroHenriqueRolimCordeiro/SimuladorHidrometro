@@ -26,11 +26,11 @@ public class Configuracao {
      * Construtor da classe. Inicializa o caminho para o arquivo de configuração
      * e realiza a primeira carga dos parâmetros.
      */
-    public Configuracao() {
+    public Configuracao(String caminhoConfiguracao) {
         // O uso de um caminho absoluto construído dinamicamente garante que o recarregamento
         // funcione de forma consistente no ambiente de desenvolvimento.
         String projectPath = System.getProperty("user.dir");
-        this.arquivoConfig = new File(projectPath, "resources/config.txt");
+        this.arquivoConfig = new File(projectPath, caminhoConfiguracao);
 
         if (!arquivoConfig.exists()) {
             logger.severe("ERRO CRÍTICO: Arquivo de configuração não encontrado em: " + arquivoConfig.getAbsolutePath());
