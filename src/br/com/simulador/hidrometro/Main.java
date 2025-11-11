@@ -1,31 +1,54 @@
 package br.com.simulador.hidrometro;
 
-import br.com.simulador.hidrometro.controller.Controladora;
-import br.com.simulador.hidrometro.util.LogManager;
+import java.io.Console;
+import java.util.*;
+import java.util.regex.*;
 
-/**
- * Classe principal que serve como ponto de entrada para a aplicação
- * do Simulador de Hidrômetro.
- */
+import br.com.simulador.hidrometro.client.CLIClient;
+
 public class Main {
-    /**
-     * O método principal que inicializa e executa as simulações em threads.
-     * @param args Argumentos de linha de comando (não utilizados nesta aplicação).
-     */
+
     public static void main(String[] args) {
-        // Configura o sistema de log para salvar em arquivo ANTES de tudo
-        LogManager.setup(); //log fica em simulador.log
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.println("\nAté mais!")));
 
-        for (int i = 1; i <= 5; i++) {
-            final String configFile = "resources/config" + i + ".txt";
+        Console console = System.console();
+        Scanner scanner = (console == null) ? new Scanner(System.in) : null;
 
-            Thread threadSimulacao = new Thread(() -> {
-                Controladora controladora = new Controladora(configFile);
-                controladora.iniciarSimulacao();
-            });
+        while (true) {
+            String line;
+            if (console != null) {
+                line = console.readLine("> ");
+            } else {
+                System.out.print("> ");
+                System.out.flush();
+                if (!scanner.hasNextLine()) break; // EOF
+                line = scanner.nextLine();
+            }
 
-            threadSimulacao.setName("SimuladorThread-" + i);
-            threadSimulacao.start();
+            if (line == null) break; // EOF
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            if (line.equalsIgnoreCase("exit") || line.equalsIgnoreCase("quit")) break;
+
+            String[] cmdArgs = splitRespectingQuotes(line);
+            try {
+                CLIClient.run(cmdArgs);
+            } catch (Exception e) {
+                System.err.println("Erro: " + e.getMessage());
+            }
         }
+    }
+
+    // Divide a linha em argumentos, respeitando "aspas" e 'aspas simples'
+    private static String[] splitRespectingQuotes(String input) {
+        List<String> tokens = new ArrayList<>();
+        Matcher m = Pattern.compile("\"([^\"]*)\"|'([^']*)'|(\\S+)").matcher(input);
+        while (m.find()) {
+            String tok = m.group(1);
+            if (tok == null) tok = m.group(2);
+            if (tok == null) tok = m.group(3);
+            tokens.add(tok);
+        }
+        return tokens.toArray(new String[0]);
     }
 }

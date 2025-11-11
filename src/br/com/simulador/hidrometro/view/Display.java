@@ -51,7 +51,7 @@ public class Display {
      * O programa é encerrado se a imagem não for encontrada.
      */
     private void carregarImagemBase() {
-        try (InputStream stream = getClass().getResourceAsStream("/images/hidrometro_base.jpeg")) {
+        try (InputStream stream = getClass().getResourceAsStream("./hidrometro_base.jpeg")) {
             if (stream == null) {
                 // System.err.println substituído pela chamada de log
                 logger.severe("ERRO CRÍTICO: Imagem 'hidrometro_base.jpeg' não encontrada na pasta 'resources/images'.");

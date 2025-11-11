@@ -1,6 +1,5 @@
 package br.com.simulador.hidrometro.controller;
 
-import br.com.simulador.hidrometro.config.Configuracao;
 import br.com.simulador.hidrometro.model.Hidrometro;
 import br.com.simulador.hidrometro.model.types.DadosLeitura;
 import br.com.simulador.hidrometro.model.types.DirecaoFluxo;
@@ -19,9 +18,17 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 public class Controladora {
-    private final Configuracao config;
     private final Hidrometro hidrometro;
     private final Display display;
+    private final double bitola_mm;
+    private final double pressao_base_bar;
+    private final double max_volume_m3;
+    private final double fator_ar;
+    private final double chance_falta_agua;
+    private final int delta_t_simulacao_ms;
+    private final int intervalo_update_display_ms;
+    private final int duracao_falta_total_ms;
+    private final int duracao_passagem_ar_ms;
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
     private static final Logger logger = Logger.getLogger(Controladora.class.getName());
 
@@ -30,40 +37,53 @@ public class Controladora {
 
     private int ultimoMetroCubicoSalvo = -1;
 
-    public Controladora(String caminhoConfiguracao) {
-        this.config = new Configuracao(caminhoConfiguracao);
-        this.hidrometro = new Hidrometro(
-                config.getDouble("bitola_mm"),
-                config.getDouble("max_volume_m3")
-        );
+    public Controladora(
+        double bitola_mm,
+        double pressao_base_bar,
+        double max_volume_m3,
+        double fator_ar,
+        double chance_falta_agua,
+        int delta_t_simulacao_ms,
+        int intervalo_update_display_ms,
+        int duracao_falta_total_ms,
+        int duracao_passagem_ar_ms
+    ) {
+        this.bitola_mm = bitola_mm;
+        this.pressao_base_bar = pressao_base_bar;
+        this.max_volume_m3 = max_volume_m3;
+        this.fator_ar = fator_ar;
+        this.chance_falta_agua = chance_falta_agua;
+        this.delta_t_simulacao_ms = delta_t_simulacao_ms;
+        this.intervalo_update_display_ms = intervalo_update_display_ms;
+        this.duracao_falta_total_ms = duracao_falta_total_ms;
+        this.duracao_passagem_ar_ms = duracao_passagem_ar_ms;
+        this.hidrometro = new Hidrometro(bitola_mm, max_volume_m3);
         this.display = new Display();
     }
 
     public void iniciarSimulacao() {
-        long deltaTSimulacaoMs = config.getInt("delta_t_simulacao_ms");
-        long intervaloDisplayMs = config.getInt("intervalo_update_display_ms");
 
-        executor.scheduleAtFixedRate(this::loopDeSimulacao, 0, deltaTSimulacaoMs, TimeUnit.MILLISECONDS);
-        executor.scheduleAtFixedRate(this::loopDeDisplay, 0, intervaloDisplayMs, TimeUnit.MILLISECONDS);
-        executor.scheduleAtFixedRate(config::verificarEAtualizar, 5, 5, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(this::loopDeSimulacao, 0, delta_t_simulacao_ms, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::loopDeDisplay, 0, intervalo_update_display_ms, TimeUnit.MILLISECONDS);
+        //executor.scheduleAtFixedRate(config::verificarEAtualizar, 5, 5, TimeUnit.SECONDS);
     }
 
     private void loopDeSimulacao() {
         gerenciarEstadoDaAgua(); // Renomeei o método para refletir a nova lógica
 
-        double deltaTSegundos = config.getInt("delta_t_simulacao_ms") / 1000.0;
-        hidrometro.simularPasso(deltaTSegundos, config.getDouble("fator_ar"));
+        double deltaTSegundos = delta_t_simulacao_ms / 1000.0;
+        hidrometro.simularPasso(deltaTSegundos, fator_ar);
     }
 
     /**
      * Lógica aprimorada que simula a falta de água em estágios.
      */
     private void gerenciarEstadoDaAgua() {
-        double chanceFaltaAgua = config.getDouble("chance_falta_agua");
-        int duracaoFaltaTotalMs = config.getInt("duracao_falta_total_ms");
-        int duracaoPassagemArMs = config.getInt("duracao_passagem_ar_ms");
-        int passosFaltaTotal = duracaoFaltaTotalMs / config.getInt("delta_t_simulacao_ms");
-        int passosPassagemAr = duracaoPassagemArMs / config.getInt("delta_t_simulacao_ms");
+        double chanceFaltaAgua = chance_falta_agua;
+        int duracaoFaltaTotalMs = duracao_falta_total_ms;
+        int duracaoPassagemArMs = duracao_passagem_ar_ms;
+        int passosFaltaTotal = duracaoFaltaTotalMs / delta_t_simulacao_ms;
+        int passosPassagemAr = duracaoPassagemArMs / delta_t_simulacao_ms;
 
         // Se já estamos em um evento de falta de água, continua gerenciando ele
         if (emFaltaDeAgua) {
@@ -81,29 +101,23 @@ public class Controladora {
             else {
                 emFaltaDeAgua = false;
                 contadorTempoFaltaAgua = 0;
-                hidrometro.setPressaoEntrada(config.getDouble("pressao_base_bar"));
+                hidrometro.setPressaoEntrada(pressao_base_bar);
             }
         }
         // Se não estamos em falta de água, faz o sorteio para ver se um novo evento começa
         else if (Math.random() < chanceFaltaAgua) {
             emFaltaDeAgua = true; // Inicia um novo evento de falta de água
-            System.out.println("--- INICIANDO EVENTO DE FALTA DE ÁGUA ---");
             hidrometro.setPressaoEntrada(0.0); // Começa imediatamente com pressão zero
         }
         // Se nada aconteceu, mantém a pressão normal
         else {
-            hidrometro.setPressaoEntrada(config.getDouble("pressao_base_bar"));
+            hidrometro.setPressaoEntrada(pressao_base_bar);
             hidrometro.setDirecaoFluxo(DirecaoFluxo.DIRETO);
         }
     }
 
     private void loopDeDisplay() {
         DadosLeitura dadosAtuais = hidrometro.getDadosLeitura();
-
-        logger.log(Level.INFO, String.format("ESTADO: Volume = %.4f m³ | Pressão = %.2f bar",
-                dadosAtuais.volumeM3(),
-                dadosAtuais.pressaoBar()));
-
         // A lógica de salvar a imagem agora está dentro do 'invokeLater' para garantir
         // que ela seja executada somente APÓS a atualização da imagem no display.
         SwingUtilities.invokeLater(() -> {
@@ -148,7 +162,6 @@ public class Controladora {
                 File arquivoDeSaida = new File(diretorio, nomeArquivo);
 
                 ImageIO.write(imagemParaSalvar, "jpeg", arquivoDeSaida);
-                logger.log(Level.INFO, "Medição salva em: " + arquivoDeSaida.getAbsolutePath());
 
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Ocorreu um erro ao salvar a imagem da medição.", e);
