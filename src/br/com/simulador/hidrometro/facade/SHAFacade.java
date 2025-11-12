@@ -2,17 +2,14 @@ package br.com.simulador.hidrometro.facade;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import br.com.simulador.hidrometro.controller.Controladora;
 
 public class SHAFacade {
     private static volatile SHAFacade instance;
     private List<Controladora> controladoras = new ArrayList<Controladora>();
+    private final List<Thread> threads = new ArrayList<>();
+    private final ArrayList<Boolean> threadsStop = new ArrayList<>();
 
     public static SHAFacade getInstance() {
         if (instance == null) {
@@ -23,6 +20,18 @@ public class SHAFacade {
             }
         }
         return instance;
+    }
+
+    private boolean testIndice(int id){
+        if((controladoras.size() - 1) < id ){
+            System.out.println("índice inválido");
+            return false;
+        }
+        return true;
+    }
+
+    public int getSizeLista(){
+        return controladoras.size();
     }
 
     public void configSimulador(
@@ -36,6 +45,7 @@ public class SHAFacade {
         int duracao_falta_total_ms,
         int duracao_passagem_ar_ms
     ) {
+        threadsStop.add(false);
         Controladora controladora = new Controladora(
             bitola_mm,
             pressao_base_bar,
@@ -45,37 +55,42 @@ public class SHAFacade {
             delta_t_simulacao_ms,
             intervalo_update_display_ms,
             duracao_falta_total_ms,
-            duracao_passagem_ar_ms
+            duracao_passagem_ar_ms,
+            threadsStop,
+            controladoras.size()
             );
-        // controladora.iniciarSimulacao();
         controladoras.add(controladora);
+        threads.add(new Thread(controladora));
         System.out.println("hidrometro criado com índice " + (controladoras.size()-1));
     }
 
 
-    // public int createSha() {
-    //     Controladora controller = new Controladora();
-    //     return controller.getId();
-    // }
+    public void createSha(int i) {
+        if(testIndice(i)){
+            System.out.println("iniciando SHA do índice " + i);
+            threads.get(i).start();
+        }
+    }
 
-    // public void finalizeSha(UUID id) {
-    //     ShaInstance inst = instances.remove(id);
-    //     if (inst != null) {
-    //         inst.stop();
-    //     }
-    // }
 
-    // public void updateFlowRate(UUID id, double value) {
-    //     ShaInstance inst = instances.get(id);
-    //     if (inst != null) {
-    //         inst.setFlowRate(value);
-    //     }
-    // }
+    public void finalizeSha(int id) {
+        if(testIndice(id)){
+            System.out.println("encerrando SHA do índice " + id);
+            threadsStop.set(id, true);
+        }
+    }
 
-    // public void setImageGenerationEnabled(UUID id, boolean enabled) {
-    //     ShaInstance inst = instances.get(id);
-    //     if (inst != null) {
-    //         inst.setImageGenerationEnabled(enabled);
-    //     }
-    // }
+    public void updateHidrometro(int id, int vazao) {
+        if(testIndice(id)){
+            System.out.println("atualizando vazão do SHA " + id);
+            controladoras.get(id).updateIntervalo(vazao);
+        }
+    }
+
+    public void setImageGenerationEnabled(int id, int salvar) {
+        if(testIndice(id)){
+            System.out.println("habilitando geração de imagem do SHA " + id);
+            controladoras.get(id).setSalvarImagem(salvar);
+        }
+    }
 }

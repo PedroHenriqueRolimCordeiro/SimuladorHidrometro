@@ -38,6 +38,10 @@ public class Display {
         inicializarComponentesGraficos();
     }
 
+    public void parar(){
+        frame.dispose();
+    }
+
     /**
      * Retorna a imagem mais recente que foi renderizada no display.
      * @return A imagem atual como um objeto BufferedImage.

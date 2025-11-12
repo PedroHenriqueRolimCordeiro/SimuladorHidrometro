@@ -47,15 +47,15 @@ public final class CLIClient {
 
             String key, val;
             int eq = a.indexOf('=');
-            if (eq >= 0) {                 // --chave=valor
+            if (eq >= 0) {
                 key = a.substring(2, eq);
                 val = a.substring(eq + 1);
-            } else {                       // --chave valor  |  --flag (boolean)
+            } else {
                 key = a.substring(2);
                 if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
                 val = args[++i];
                 } else {
-                val = "true";              // presença da flag => true
+                val = "true";
                 }
             }
             out.put(key, val);
@@ -68,9 +68,10 @@ public final class CLIClient {
 
         SHAFacade facade = SHAFacade.getInstance();
         Map<String, String> opts = parseFlags(args);
+        int indice = 0;
         String cmd = args[0].toLowerCase();
         switch (cmd) {
-            case "config":
+            case "configurar":
                 Map<String,String> m = new HashMap<>();
                 double bitola = getDouble(opts, "bitola_mm", 20.0);
                 double pressao = getDouble(opts, "pressao_base_bar", 2.5);
@@ -94,19 +95,29 @@ public final class CLIClient {
                     );
                 break;
 
-            case "create":
-                break;
-
-            case "stop":
+            case "iniciar":
+                indice = Integer.parseInt(args[1]);
+                facade.createSha(indice);
                 System.out.println("OK");
                 break;
 
-            case "modify":
+            case "parar":
+                indice = Integer.parseInt(args[1]);
+                facade.finalizeSha(indice);
                 System.out.println("OK");
                 break;
 
-            case "images":
-                // facade.setImageGenerationEnabled(UUID.fromString(args[1]), enabled);
+            case "modificar":
+                indice = Integer.parseInt(args[1]);
+                int vazao = Integer.parseInt(args[2]);
+                facade.updateHidrometro(indice, vazao);
+                System.out.println("OK");
+                break;
+
+            case "imagem":
+                indice = Integer.parseInt(args[1]);
+                int salvar = Integer.parseInt(args[2]);
+                facade.setImageGenerationEnabled(indice, salvar);
                 System.out.println("OK");
                 break;
 

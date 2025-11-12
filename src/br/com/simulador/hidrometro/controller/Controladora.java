@@ -6,34 +6,39 @@ import br.com.simulador.hidrometro.model.types.DirecaoFluxo;
 import br.com.simulador.hidrometro.view.Display;
 
 import javax.imageio.ImageIO;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
 import javax.swing.SwingUtilities;
+
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-public class Controladora {
+public class Controladora implements Runnable{
     private final Hidrometro hidrometro;
-    private final Display display;
+    private Display display;
     private final double bitola_mm;
     private final double pressao_base_bar;
     private final double max_volume_m3;
     private final double fator_ar;
+    private boolean salvarImagem = false;
     private final double chance_falta_agua;
     private final int delta_t_simulacao_ms;
-    private final int intervalo_update_display_ms;
+    private int intervalo_update_display_ms;
     private final int duracao_falta_total_ms;
     private final int duracao_passagem_ar_ms;
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
+    private ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
     private static final Logger logger = Logger.getLogger(Controladora.class.getName());
-
+    private ArrayList<Boolean> threadsStop;
     private boolean emFaltaDeAgua = false;
     private int contadorTempoFaltaAgua = 0;
+    private int indice;
 
     private int ultimoMetroCubicoSalvo = -1;
 
@@ -46,7 +51,9 @@ public class Controladora {
         int delta_t_simulacao_ms,
         int intervalo_update_display_ms,
         int duracao_falta_total_ms,
-        int duracao_passagem_ar_ms
+        int duracao_passagem_ar_ms,
+        ArrayList<Boolean> threadsStop,
+        int indice
     ) {
         this.bitola_mm = bitola_mm;
         this.pressao_base_bar = pressao_base_bar;
@@ -58,13 +65,32 @@ public class Controladora {
         this.duracao_falta_total_ms = duracao_falta_total_ms;
         this.duracao_passagem_ar_ms = duracao_passagem_ar_ms;
         this.hidrometro = new Hidrometro(bitola_mm, max_volume_m3);
-        this.display = new Display();
+        this.display = null;
+        this.threadsStop = threadsStop;
+        this.indice = indice;
     }
 
-    public void iniciarSimulacao() {
+    public void updateIntervalo(int intervalo){
+        this.intervalo_update_display_ms = intervalo;
+    }
 
+    @Override
+    public void run (){
+        this.display = new Display();
         executor.scheduleAtFixedRate(this::loopDeSimulacao, 0, delta_t_simulacao_ms, TimeUnit.MILLISECONDS);
         executor.scheduleAtFixedRate(this::loopDeDisplay, 0, intervalo_update_display_ms, TimeUnit.MILLISECONDS);
+        while(true){
+            try {
+                Thread.sleep(500);
+                if(threadsStop.get(indice)){
+                    executor.shutdown();
+                    this.display.parar();
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         //executor.scheduleAtFixedRate(config::verificarEAtualizar, 5, 5, TimeUnit.SECONDS);
     }
 
@@ -126,6 +152,14 @@ public class Controladora {
         });
     }
 
+    public void setSalvarImagem(int salvar){
+        if(salvar == 1){
+            this.salvarImagem = true;
+        }else{
+            this.salvarImagem = false;
+        }
+    }
+
     /**
      * Verifica se a parte inteira do volume foi alterada (novo m³ completado)
      * e, em caso afirmativo, salva a imagem atual do hidrômetro em um arquivo.
@@ -135,7 +169,7 @@ public class Controladora {
         int metroCubicoAtual = (int) volumeAtualM3;
 
         // Condição: O m³ atual é maior que zero e é diferente do último que foi salvo.
-        if (metroCubicoAtual > 0 && metroCubicoAtual != this.ultimoMetroCubicoSalvo) {
+        if ((metroCubicoAtual > 0 && metroCubicoAtual != this.ultimoMetroCubicoSalvo) && this.salvarImagem) {
             this.ultimoMetroCubicoSalvo = metroCubicoAtual;
 
             BufferedImage imagemParaSalvar = display.getImagemAtual();
@@ -147,7 +181,7 @@ public class Controladora {
             try {
                 // A matrícula agora é uma variável local, pois só é usada neste método.
                 // IMPORTANTE: Altere o valor abaixo para a sua matrícula SUAP.
-                final String matriculaSUAP = "202311250023";
+                final String matriculaSUAP = "202211250019";
 
                 File diretorio = new File("Medicoes_" + matriculaSUAP);
 
